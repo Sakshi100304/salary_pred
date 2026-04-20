@@ -4,7 +4,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LinearRegression
 
 # Load dataset
-df = pd.read_csv('data/salary_dataset.csv')
+df = pd.read_csv('Salary_Dataset_DataScienceLovers.csv')
 
 # Initialize encoders
 company_encoder = LabelEncoder()
