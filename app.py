@@ -1,59 +1,77 @@
+
 import streamlit as st
 import pickle
 import pandas as pd
+import numpy as np
 
 st.set_page_config(layout="wide")
-st.title("💼 Salary Prediction App")
+st.title('Salary Prediction App')
 
-st.write("Predict salary using job details.")
+st.write("This app predicts salary based on various job attributes. Categorical features can now be selected from dropdowns.")
 
-# Load model (pipeline)
+# Load the trained model
 try:
-    model = pickle.load(open('linear_regression_model.pkl', 'rb'))
-except:
-    st.error("❌ Model file not found!")
+    with open('linear_regression_model.pkl', 'rb') as file:
+        model = pickle.load(file)
+except FileNotFoundError:
+    st.error("Error: 'linear_regression_model.pkl' not found. Make sure the model was saved correctly.")
     st.stop()
 
-# Load dataset (for dropdown values)
+# Load the label encoders
 try:
-    df = pd.read_csv('Salary_Dataset_DataScienceLovers.csv')
-except:
-    st.error("❌ Dataset not found!")
+    with open('label_encoders.pkl', 'rb') as file:
+        label_encoders = pickle.load(file)
+except FileNotFoundError:
+    st.error("Error: 'label_encoders.pkl' not found. Make sure the label encoders were saved correctly.")
     st.stop()
 
-st.sidebar.header("Input Features")
+# Create input fields for features
+st.sidebar.header('Input Features')
 
-def user_input():
+def user_input_features():
     rating = st.sidebar.slider('Rating', 0.0, 5.0, 3.5)
+    
+    # For categorical features, use selectbox and encode the selected value
+    company_name_options = list(label_encoders['Company Name'].classes_)
+    selected_company_name = st.sidebar.selectbox('Company Name', company_name_options)
+    company_name_encoded = label_encoders['Company Name'].transform([selected_company_name])[0]
 
-    # ✅ Get unique values from dataset
-    company = st.sidebar.selectbox('Company Name', sorted(df['Company Name'].dropna().unique()))
-    job_title = st.sidebar.selectbox('Job Title', sorted(df['Job Title'].dropna().unique()))
-    salaries_reported = st.sidebar.number_input('Salaries Reported', 1, 100, 1)
-    location = st.sidebar.selectbox('Location', sorted(df['Location'].dropna().unique()))
-    employment = st.sidebar.selectbox('Employment Status', sorted(df['Employment Status'].dropna().unique()))
-    role = st.sidebar.selectbox('Job Role', sorted(df['Job Roles'].dropna().unique()))
+    job_title_options = list(label_encoders['Job Title'].classes_)
+    selected_job_title = st.sidebar.selectbox('Job Title', job_title_options)
+    job_title_encoded = label_encoders['Job Title'].transform([selected_job_title])[0]
+
+    salaries_reported = st.sidebar.number_input('Salaries Reported', min_value=1, value=1)
+    
+    location_options = list(label_encoders['Location'].classes_)
+    selected_location = st.sidebar.selectbox('Location', location_options)
+    location_encoded = label_encoders['Location'].transform([selected_location])[0]
+
+    employment_status_options = list(label_encoders['Employment Status'].classes_)
+    selected_employment_status = st.sidebar.selectbox('Employment Status', employment_status_options)
+    employment_status_encoded = label_encoders['Employment Status'].transform([selected_employment_status])[0]
+
+    job_roles_options = list(label_encoders['Job Roles'].classes_)
+    selected_job_roles = st.sidebar.selectbox('Job Roles', job_roles_options)
+    job_roles_encoded = label_encoders['Job Roles'].transform([selected_job_roles])[0]
 
     data = {
         'Rating': rating,
-        'Company Name': [company],
-        'Job Title': [job_title],
-        'Salaries Reported': [salaries_reported],
-        'Location': [location],
-        'Employment Status': [employment],
-        'Job Roles': [role]
+        'Company Name': company_name_encoded,
+        'Job Title': job_title_encoded,
+        'Salaries Reported': salaries_reported,
+        'Location': location_encoded,
+        'Employment Status': employment_status_encoded,
+        'Job Roles': job_roles_encoded
     }
+    features = pd.DataFrame(data, index=[0])
+    return features
 
-    return pd.DataFrame(data, index=[0])
+df_input = user_input_features()
 
-df_input = user_input()
-
-st.subheader("🧾 User Input")
+st.subheader('User Input Features (Encoded)')
 st.write(df_input)
 
-# Prediction
-if st.button("Predict Salary"):
-    prediction = model.predict(df_input)[0]
-
-    st.subheader("💰 Predicted Salary")
-    st.success(f"${prediction:,.2f}")
+if st.button('Predict Salary'):
+    prediction = model.predict(df_input.to_numpy())
+    st.subheader('Predicted Salary')
+    st.write(f'The predicted salary is: ${prediction[0]:,.2f}')
