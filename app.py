@@ -36,12 +36,12 @@ def user_input():
 
     data = {
         'Rating': rating,
-        'Company Name': company,
-        'Job Title': job_title,
-        'Salaries Reported': salaries_reported,
-        'Location': location,
-        'Employment Status': employment,
-        'Job Roles': role
+        'Company Name': [company],
+        'Job Title': [job_title],
+        'Salaries Reported': [salaries_reported],
+        'Location': [location],
+        'Employment Status': [employment],
+        'Job Roles': [role]
     }
 
     return pd.DataFrame(data, index=[0])
