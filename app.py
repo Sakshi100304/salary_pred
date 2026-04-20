@@ -1,74 +1,52 @@
 import streamlit as st
 import pickle
 import pandas as pd
+import numpy as np
 
 st.set_page_config(layout="wide")
-st.title('💼 Salary Prediction App')
+st.title('Salary Prediction App')
 
-st.write("Predict salary based on job details.")
+st.write("This app predicts salary based on various job attributes.")
+st.write("Please enter numerical values for all features. For categorical features, use their previously encoded numerical representations.")
 
-# Load model and encoders
+# Load the trained model
 try:
-    model = pickle.load(open('linear_regression_model.pkl', 'rb'))
-    company_encoder = pickle.load(open('company_encoder.pkl', 'rb'))
-    job_title_encoder = pickle.load(open('job_title_encoder.pkl', 'rb'))
-    location_encoder = pickle.load(open('location_encoder.pkl', 'rb'))
-    employment_encoder = pickle.load(open('employment_encoder.pkl', 'rb'))
-    role_encoder = pickle.load(open('role_encoder.pkl', 'rb'))
-except:
-    st.error("Model or encoder files not found!")
+    with open('linear_regression_model.pkl', 'rb') as file:
+        model = pickle.load(file)
+except FileNotFoundError:
+    st.error("Error: 'linear_regression_model.pkl' not found. Make sure the model was saved correctly.")
     st.stop()
 
-# Sidebar input
+# Create input fields for features
 st.sidebar.header('Input Features')
 
 def user_input_features():
     rating = st.sidebar.slider('Rating', 0.0, 5.0, 3.5)
-    
-    company = st.sidebar.selectbox(
-        'Company Name', company_encoder.classes_
-    )
-    
-    job_title = st.sidebar.selectbox(
-        'Job Title', job_title_encoder.classes_
-    )
-    
-    salaries_reported = st.sidebar.number_input(
-        'Salaries Reported', min_value=1, value=1
-    )
-    
-    location = st.sidebar.selectbox(
-        'Location', location_encoder.classes_
-    )
-    
-    employment = st.sidebar.selectbox(
-        'Employment Status', employment_encoder.classes_
-    )
-    
-    role = st.sidebar.selectbox(
-        'Job Role', role_encoder.classes_
-    )
+    company_name = st.sidebar.number_input('Company Name (Encoded Number)', min_value=0, value=0)
+    job_title = st.sidebar.number_input('Job Title (Encoded Number)', min_value=0, value=0)
+    salaries_reported = st.sidebar.number_input('Salaries Reported', min_value=1, value=1)
+    location = st.sidebar.number_input('Location (Encoded Number)', min_value=0, value=0)
+    employment_status = st.sidebar.number_input('Employment Status (Encoded Number)', min_value=0, value=0)
+    job_roles = st.sidebar.number_input('Job Roles (Encoded Number)', min_value=0, value=0)
 
-    # Encoding
     data = {
         'Rating': rating,
-        'Company Name': company_encoder.transform([company])[0],
-        'Job Title': job_title_encoder.transform([job_title])[0],
+        'Company Name': company_name,
+        'Job Title': job_title,
         'Salaries Reported': salaries_reported,
-        'Location': location_encoder.transform([location])[0],
-        'Employment Status': employment_encoder.transform([employment])[0],
-        'Job Roles': role_encoder.transform([role])[0]
+        'Location': location,
+        'Employment Status': employment_status,
+        'Job Roles': job_roles
     }
-
-    return pd.DataFrame(data, index=[0])
+    features = pd.DataFrame(data, index=[0])
+    return features
 
 df_input = user_input_features()
 
-st.subheader('📊 User Input')
+st.subheader('User Input Features')
 st.write(df_input)
 
-# Prediction
 if st.button('Predict Salary'):
     prediction = model.predict(df_input)
-    st.subheader('💰 Predicted Salary')
-    st.success(f"${prediction[0]:,.2f}")
+    st.subheader('Predicted Salary')
+    st.write(f'The predicted salary is: ${prediction[0]:,.2f}')
